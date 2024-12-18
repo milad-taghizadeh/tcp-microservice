@@ -1,8 +1,9 @@
-import { Body, Controller, Inject, Post } from '@nestjs/common';
+import { Body, Controller, HttpException, Inject, Post } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { ApiConsumes } from '@nestjs/swagger';
 import { UserSignup } from './dto/user.dto';
 import { catchError, lastValueFrom } from 'rxjs';
+import { error } from 'console';
 
 @Controller('/user')
 export class UserController {
@@ -18,6 +19,9 @@ export class UserController {
         }),
       ),
     );
+    if (response?.error) {
+      throw new HttpException(response?.message, response?.status ?? 500);
+    }
     return response;
   }
 }

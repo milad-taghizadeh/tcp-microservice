@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, OmitType } from '@nestjs/swagger';
 
 export class UserSignup {
   @ApiProperty()
@@ -10,3 +10,5 @@ export class UserSignup {
   @ApiProperty()
   password: string;
 }
+
+export class LoginDto extends OmitType(UserSignup, ['name']) {}

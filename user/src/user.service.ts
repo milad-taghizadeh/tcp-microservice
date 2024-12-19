@@ -3,7 +3,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { User, UserDocument } from './schema/user.schema';
 import { Model } from 'mongoose';
 import { IFindById, ILogin, ISignup } from './interface/user.interface';
-import { genSaltSync, hashSync } from 'bcrypt';
+import { compareSync, genSaltSync, hashSync } from 'bcrypt';
 
 @Injectable()
 export class UserService {
@@ -28,8 +28,29 @@ export class UserService {
       data: { userId: user._id.toString() },
     };
   }
-  login(loginDto: ILogin) {
-    console.log(loginDto);
+  async login(loginDto: ILogin) {
+    const { email, password } = loginDto;
+    const user = await this.userModel.findOne({ email });
+    if (!user) {
+      return {
+        status: HttpStatus.UNAUTHORIZED,
+        message: 'User not found with this email address',
+        error: true,
+      };
+    }
+    if (compareSync(password, user.password)) {
+      return {
+        status: HttpStatus.UNAUTHORIZED,
+        message: 'username or password incorrect',
+        error: true,
+      };
+    }
+    return {
+      data: {
+        userId: user._id.toString(),
+      },
+      status: HttpStatus.OK,
+    };
   }
   getById(findDto: IFindById) {
     console.log(findDto);

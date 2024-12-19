@@ -8,9 +8,9 @@ import {
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { ApiConsumes } from '@nestjs/swagger';
-import { UserSignup } from './dto/user.dto';
+import { LoginDto, UserSignup } from './dto/user.dto';
 import { catchError, lastValueFrom } from 'rxjs';
-import { error } from 'console';
+// import { error } from 'console';
 
 @Controller('/user')
 export class UserController {
@@ -24,6 +24,34 @@ export class UserController {
   async signup(@Body() signupDto: UserSignup) {
     const response = await lastValueFrom(
       this.userClientService.send('signup', signupDto).pipe(
+        catchError((err) => {
+          throw err;
+        }),
+      ),
+    );
+    if (response?.error) {
+      throw new HttpException(response?.message, response?.status ?? 500);
+    }
+    if (response?.data?.userId) {
+      const tokenResponse = await lastValueFrom(
+        this.tokenClientService.send('create_user_token', {
+          userId: response?.data?.userId,
+        }),
+      );
+      if (tokenResponse?.data?.token) {
+        return { token: tokenResponse?.data?.token };
+      }
+    }
+    throw new InternalServerErrorException(
+      'some services are missing or invalid',
+    );
+  }
+
+  @Post('login')
+  @ApiConsumes('application/x-www-form-urlencoded')
+  async login(@Body() loginDto: LoginDto) {
+    const response = await lastValueFrom(
+      this.userClientService.send('login', loginDto).pipe(
         catchError((err) => {
           throw err;
         }),
